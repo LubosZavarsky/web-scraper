@@ -61,7 +61,7 @@ async function runWebScraper() {
         );
       } else {
         console.log("No changes detected.");
-        sendMail(`No changes detected.`);
+        //sendMail(`No changes detected.`);
       }
     }
 
