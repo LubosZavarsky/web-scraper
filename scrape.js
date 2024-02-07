@@ -47,17 +47,27 @@ async function runWebScraper() {
 
     // Compare current and previous results
     if (previousResult) {
-      const differences = grabItems.filter(
-        (title) => !previousResult.includes(title)
-      );
-
-      if (differences.length > 0) {
+      if (grabItems.length < previousResult.length) {
+        const removedItems = previousResult.filter(
+          (title) => !grabItems.includes(title)
+        );
         console.log(
           "Changes detected.",
-          `These items: [${differences}] have been added.`
+          `These items: [${removedItems}] have been removed.`
         );
         sendMail(
-          `These items: <b>[${differences}]</b> have been added.<br>${process.env.TARGET_URL}`
+          `These items: <b>[${removedItems}]</b> have been removed.<br>${process.env.TARGET_URL}`
+        );
+      } else if (grabItems.length > previousResult.length) {
+        const addedItems = grabItems.filter(
+          (title) => !previousResult.includes(title)
+        );
+        console.log(
+          "Changes detected.",
+          `These items: [${addedItems}] have been added.`
+        );
+        sendMail(
+          `These items: <b>[${addedItems}]</b> have been added.<br>${process.env.TARGET_URL}`
         );
       } else {
         console.log("No changes detected.");
