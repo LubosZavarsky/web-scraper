@@ -1,15 +1,12 @@
 import { launch } from "puppeteer";
 import * as fs from "node:fs/promises";
-import dotenv from "dotenv";
 import sendMail from "./mail-sender.js";
-
-dotenv.config();
-
-const resultFilePath = "./scraped-data.json";
-const targetUrl = process.env.TARGET_URL;
 
 async function runWebScraper() {
   console.log("Starting the web scraper...");
+
+  const resultFilePath = "./scraped-data.json";
+  const targetUrl = process.env.TARGET_URL;
 
   try {
     const browser = await launch({ headless: "new" });
@@ -84,4 +81,6 @@ async function runWebScraper() {
   }
 }
 
-runWebScraper();
+//runWebScraper();
+
+export default runWebScraper;
