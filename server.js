@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 //   console.log("Cron job executed at:", new Date().toLocaleString());
 // }
 
+// Run scraper every 2 minutes
 cron.schedule("*/2 * * * *", () => {
   //logMessage();
   runWebScraper();
