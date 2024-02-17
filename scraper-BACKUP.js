@@ -1,5 +1,5 @@
+import { launch } from "puppeteer";
 import * as fs from "node:fs/promises";
-import * as cheerio from "cheerio";
 import sendMail from "./mail-sender.js";
 
 async function runWebScraper() {
@@ -9,21 +9,29 @@ async function runWebScraper() {
   const targetUrl = process.env.TARGET_URL;
 
   try {
-    // Fetch data from URL and store the response into a const
-    const response = await fetch(targetUrl);
-    // Convert response into text
-    const body = await response.text();
-    // Load body data
-    const $ = cheerio.load(body);
-
-    let result = [];
-
-    $(".nm-shop .nm-products li .nm-shop-loop-details h3 a").map((i, el) => {
-      const title = $(el).text();
-      result.push(title ? title : null);
+    const browser = await launch({
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
+    const page = await browser.newPage();
 
-    //console.log(result);
+    console.log(`Navigating to ${targetUrl}`);
+    await page.goto(targetUrl);
+    await page.waitForSelector("body");
+
+    const grabItems = await page.evaluate(() => {
+      const items = document.body.querySelectorAll(
+        ".nm-shop .nm-products li .nm-shop-loop-details h3 a"
+      );
+      let result = [];
+
+      items.forEach((item) => {
+        const title = item.textContent;
+        result.push(title ? title : null);
+      });
+
+      return result;
+    });
 
     // Read the previous result from the file
     let previousResult = null;
@@ -35,13 +43,13 @@ async function runWebScraper() {
     }
 
     // Save current result to the file
-    await fs.writeFile(resultFilePath, JSON.stringify(result));
+    await fs.writeFile(resultFilePath, JSON.stringify(grabItems));
 
     // Compare current and previous results
     if (previousResult) {
-      if (result.length < previousResult.length) {
+      if (grabItems.length < previousResult.length) {
         const removedItems = previousResult.filter(
-          (title) => !result.includes(title)
+          (title) => !grabItems.includes(title)
         );
         console.log(
           "Changes detected.",
@@ -50,8 +58,8 @@ async function runWebScraper() {
         sendMail(
           `These items: <b>[${removedItems}]</b> have been removed.<br>${process.env.TARGET_URL}`
         );
-      } else if (result.length > previousResult.length) {
-        const addedItems = result.filter(
+      } else if (grabItems.length > previousResult.length) {
+        const addedItems = grabItems.filter(
           (title) => !previousResult.includes(title)
         );
         console.log(
@@ -67,7 +75,10 @@ async function runWebScraper() {
       }
     }
 
-    // console.log("Web scraping completed successfully.");
+    console.log("Web scraping completed successfully.");
+
+    // Close browser
+    await browser.close();
   } catch (error) {
     console.log(`Scraping failed: ${error}`);
   }
